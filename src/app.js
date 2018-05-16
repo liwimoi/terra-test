@@ -146,6 +146,8 @@ App = {
         .createTerraToken(name, symbol, {from: web3.eth.coinbase, gas: 10000000000})
         .then(e => {
             console.log('create token: ' + name);
+            $('#name').val('');
+            $('#symbol').val('');
         })
     });
 
