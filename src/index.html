@@ -2,28 +2,77 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      .section {
+        height: 300px;
+        border: 1px solid #ebebeb;
+        word-wrap: break-word;
+        overflow-y: scroll;
+      }
+
+      .list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .list > li {
+        border-bottom: 1px solid #ebebeb;
+      }
+    </style>
     <title>dapp test</title>
   </head>
   <body>
-    <h1 class="text-center">dapp test</h1>
-    <hr/>
 
-
-    <!-- ... -->
-    <div id="balanceRow" class="row">
-      <div id="balanceTemplate" style="display: none;">
-        <h3 class="panel-title">Balance</h3>
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12 col-sm-8 col-sm-push-2">
+          <h1 class="text-center">dapp test</h1>
+          <hr/>
+          <br/>
+        </div>
       </div>
     </div>
 
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-6 col-md-6 section">
+          <ul id="list" class="list">
 
-    <!-- JQuery will help us extract data from json files -->
+          </ul>
+        </div>
+        <div class="col-sm-6 col-md-6 section">
+          <label>
+            Name:
+            <input id="name" type="text">
+          </label>
+          <label>
+            Symbol:
+            <input id="symbol" type="text">
+          </label>
+          <label>
+            amount:
+            <input id="amont" type="text" value="100" disabled>
+          </label>
+          <button id="register">registe</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-6 col-md-6 section" id="token-detail">
+
+        </div>
+        <div class="col-sm-6 col-md-6 section">
+
+        </div>
+      </div>
+
+    </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Web3.js will help us interact with the deployed smart contract -->
     <script src="util/web3.min.js"></script>
-    <!-- Truffle contract  will our life easier when interacting with smart contracts -->
+    <script src="util/bootstrap.min.js"></script>
     <script src="util/truffle-contract.js"></script>
-    <!-- app.js is where we will write our JS logic -->
     <script src="app.js"></script>
   </body>
 </html>

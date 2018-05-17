@@ -1,25 +1,13 @@
 App = {
   web3Provider: null,
   contracts: {},
+  factoryInstance: null,
+  owners: null,
+  tokenABI: null,
+  tokens: [],
 
   init: function() {
-    // Load pets.
-    // $.getJSON('../pets.json', function(data) {
-    //   var petsRow = $('#petsRow');
-    //   var petTemplate = $('#petTemplate');
-    //
-    //   for (i = 0; i < data.length; i ++) {
-    //     petTemplate.find('.panel-title').text(data[i].name);
-    //     petTemplate.find('img').attr('src', data[i].picture);
-    //     petTemplate.find('.pet-breed').text(data[i].breed);
-    //     petTemplate.find('.pet-age').text(data[i].age);
-    //     petTemplate.find('.pet-location').text(data[i].location);
-    //     petTemplate.find('.btn-adopt').attr('data-id', data[i].id);
-    //
-    //     petsRow.append(petTemplate.html());
-    //   }
-    // });
-
+    App.addEventListner();
     return App.initWeb3();
   },
 
@@ -32,134 +20,148 @@ App = {
       App.web3Provider = new Web3.providers.HttpProvider('http://localhost:8545');
     }
     web3 = new Web3(App.web3Provider);
-    console.log("initWeb3");
+
     return App.initContract();
   },
 
-  initContract: function() {
-    console.log("initContract");
-    $.getJSON('EIP20.json', function(data) {
-      // Get the necessary contract artifact file and instantiate it with truffle-contract
-      var EIP20Artifact = data;
-      App.contracts.EIP20 = TruffleContract(EIP20Artifact);
+  initContract: () => {
 
-      // Set the provider for our contract
-      App.contracts.EIP20.setProvider(App.web3Provider);
+    $.getJSON('TerraFactory.json', (data) => {
+      var eip20FactoryArtifact = data;
+      App.contracts.TerraFactory = TruffleContract(eip20FactoryArtifact);
+      App.contracts.TerraFactory.setProvider(App.web3Provider);
 
-      // Use our contract to retrieve and mark the adopted pets
-      return App.checkBalances();
-    });
-    return App.bindEvents();
-  },
-
-  bindEvents: function() {
-    $(document).on('click', '.btn-adopt', App.handleAdopt);
-  },
-
-  getEIP20Instance : function() {
-    var eip20instance;
-
-    App.contracts.EIP20.deployed().then(function(instance) {
-      eip20instance = instance;
-      return instance
-    }).catch(function(err) {
-      console.log(err.message);
+      return App.deployFactory();
     });
   },
 
-  test : function() {
-    console.log("Iterating through blocks...");
-    window.contracts = []
-    for (var i = 0; i <= web3.eth.blockNumber; i++) {
-      console.log("block:" + i);
-      var block = web3.eth.getBlock(i,true);
-      if(block != null && block.transactions != null) {
-        block.transactions.forEach( function(e) {
-          console.log("  tx hash          : " + e.hash + "\n"
-            + "   nonce           : " + e.nonce + "\n"
-            + "   blockHash       : " + e.blockHash + "\n"
-            + "   blockNumber     : " + e.blockNumber + "\n"
-            + "   transactionIndex: " + e.transactionIndex + "\n"
-            + "   from            : " + e.from + "\n"
-            + "   to              : " + e.to + "\n"
-            + "   value           : " + e.value + "\n"
-            + "   time            : " + block.timestamp + " " + new Date(block.timestamp * 1000).toGMTString() + "\n"
-            + "   gasPrice        : " + e.gasPrice + "\n"
-            + "   gas             : " + e.gas + "\n"
-            + "   input           : " + e.input);
-            var receipt = web3.eth.getTransactionReceipt(e.hash);
-            if (receipt.contractAddress) {
-              contracts.push(receipt.contractAddress);
-            }
-          });
-      } else {
-        console.log("null block");
-      };
-    }
-  },
-  //
-  // 0x15b2dd7da27c046d584bcaf67519f4a6c87ab6f4
+  deployFactory: () => {
 
-  checkBalances: function(adopters, account) {
-    var eip20Instance;
+    App.contracts.TerraFactory
+      .deployed()
+      .then((instance) => {
+        App.factoryInstance = instance;
+        App.addWatchListner();
 
-    App.contracts.EIP20.deployed().then(function(instance) {
-      eip20Instance = instance;
-
-      window.a = eip20Instance;
-
-      return eip20Instance.balanceOf.call("0x67e0a90df9c038043f9d59cdb31aee34a0f2ab8a", {from: "0x67e0a90df9c038043f9d59cdb31aee34a0f2ab8a"});
-    }).then(function(balance) {
-      console.log(balance.toNumber());
-    }).catch(function(err) {
-      console.log(err.message);
-    });
-  },
-
-  transfer: function(adopters, account) {
-    var eip20Instance;
-    console.log("transfer");
-    App.contracts.EIP20.deployed().then(function(instance) {
-      eip20Instance = instance;
-
-      window.a = eip20Instance;
-
-      return eip20Instance.transfer.call("0x15b2dd7da27c046d584bcaf67519f4a6c87ab6f4", 1 , {from: "0x67e0a90df9c038043f9d59cdb31aee34a0f2ab8a"});
-    }).then(function(balance) {
-      console.log(balance);
-    }).catch(function(err) {
-      console.log(err.message);
-    });
-  },
-
-
-  handleAdopt: function(event) {
-    event.preventDefault();
-
-    var petId = parseInt($(event.target).data('id'));
-
-    var adoptionInstance;
-
-    web3.eth.getAccounts(function(error, accounts) {
-      if (error) {
-        console.log(error);
-      }
-
-      var account = accounts[0];
-
-      App.contracts.EIP20.deployed().then(function(instance) {
-        eip20Instance = instance;
-
-        // Execute adopt as a transaction by sending account
-        return adoptionInstance.adopt(petId, {from: account});
-      }).then(function(result) {
-        return App.markAdopted();
-      }).catch(function(err) {
-        console.log(err.message);
+        return App.setTokenAbi();
       });
+  },
+
+  addWatchListner: () => {
+
+    App.factoryInstance
+      .NewRegistry()
+      .watch((err, response) => {
+        if (err) {
+          throw new Error('NewRegistry error.');
+        }
+
+        var data = response.args;
+        var addr = data.contractAddress;
+
+        var contract = App.createTokenInstance(addr);
+        var token = App.getTokenInfo(contract);
+
+        App.storeContract(contract);
+        App.tokens.push(token);
+        App.renderToken(token);
+
+
+        console.log(data);
+      });
+  },
+
+  setTokenAbi: () => {
+    $.get('TerraToken.json', (data)=> {
+      console.log('success setTokens ABI');
+      App.tokenABI = data.abi;
+      return App.createTokens();
+    });
+  },
+
+  createTokens: () => {
+    var owners = App.owners;
+    var factoryInstance = App.factoryInstance;
+
+    factoryInstance
+      .getTokens()
+      .then(addrs => {
+          for (let addr of addrs) {
+            var contract = App.createTokenInstance(addr);
+            var token = App.getTokenInfo(contract);
+
+            App.storeContract(contract);
+            App.tokens.push(token);
+            App.renderToken(token);
+          }
+      });
+  },
+
+  createTokenInstance: (addr) => {
+
+    var abi = App.tokenABI;
+    var contract = web3.eth.contract(abi).at(addr);
+
+    return contract;
+  },
+
+  storeContract: (contract) => {
+    var name = contract.name();
+    App.contracts[name] = contract;
+  },
+
+  getTokenInfo: (contract) => {
+    var name = contract.name();
+    var symbol = contract.symbol();
+
+    return  {
+      contractAddress: contract.address,
+      name,
+      symbol
+    };
+  },
+
+  renderToken: (token) => {
+    var idx = App.tokens.indexOf(token);
+    var template = `
+    <li data-idx="${idx}">
+      name: ${token.name} symbol: ${token.symbol} <br/>
+      contractAddress: ${token.contractAddress}
+    </li>`;
+
+    $('#list').append(template);
+  },
+
+  addEventListner: () => {
+
+    $('#register').on('click', (e)=> {
+      var name = $('#name').val();
+      var symbol = $('#symbol').val();
+
+      if (name.trim().length === 0) return;
+      if (symbol.trim().length === 0) return;
+      if (!App.factoryInstance) return;
+
+      App.factoryInstance
+        .createTerraToken(name, symbol, {from: web3.eth.coinbase, gas: 10000000000})
+        .then(e => {
+            console.log('create token: ' + name);
+            $('#name').val('');
+            $('#symbol').val('');
+        })
+    });
+
+    $('#list').on('click', 'li', (e) => {
+      var target = e.target;
+      var $target = $(target);
+      var idx = $target.attr('data-idx');
+      var token =  App.tokens[idx];
+      console.log(`click li[${idx}]`, token);
+      var $tokenDetail = $('#token-detail');
+      $tokenDetail.empty();
+      $tokenDetail.append(JSON.stringify(token));
     });
   }
-
 };
 
 $(function() {
