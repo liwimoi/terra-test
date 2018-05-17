@@ -129,7 +129,7 @@ App = {
       contractAddress: ${token.contractAddress}
     </li>`;
 
-    $('#list').append(template);
+    $('#list').prepend(template);
   },
 
   addEventListner: () => {
@@ -143,7 +143,7 @@ App = {
       if (!App.factoryInstance) return;
 
       App.factoryInstance
-        .createTerraToken(name, symbol, {from: web3.eth.coinbase, gas: 10000000000})
+        .createTerraToken(name, symbol, {from: web3.eth.coinbase, gas: 10000000000, gasPrice: 10000})
         .then(e => {
             console.log('create token: ' + name);
             $('#name').val('');
